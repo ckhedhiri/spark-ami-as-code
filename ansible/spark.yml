@@ -1,0 +1,48 @@
+---
+- hosts: all
+  become: yes # become root
+  vars_files:
+    - "vars/spark_vars.yml"
+  tasks:
+    - name: Install a list of packages
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - python3-pip
+          - openjdk-8-jdk
+          - scala
+    
+    - name: Download spark zip
+      get_url:
+        url: "{{ bin_spark_url }}"
+        dest: /opt
+    
+    - name: Extract bin spark
+      unarchive:
+        src: /opt/{{ zip_name }}
+        dest: /opt
+    
+    - name: Add Spark path to global PATH
+      lineinfile:
+        path: /etc/profile.d/spark_client.sh
+        line: export PATH=$PATH:/opt/{{ spark_dir }}/bin
+        state: present
+        create: yes
+        insertafter: EOF
+
+    - name: Set environment variable SPARK_HOME
+      lineinfile:
+        path: /etc/profile.d/spark_home.sh
+        line: export SPARK_HOME=/opt/{{ spark_dir }}
+        state: present
+        create: yes
+        insertafter: EOF
+
+    - name: Set environment variable PYSPARK_PYTHON
+      lineinfile:
+        path: /etc/profile.d/pyspark.sh
+        line: export PYSPARK_PYTHON=python3
+        state: present
+        create: yes
+        insertafter: EOF

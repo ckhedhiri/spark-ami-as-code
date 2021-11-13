@@ -1,0 +1,60 @@
+{
+    "_author":    "Chiheb KHEDHIRI <ckhedhiri@wewyse.com>",
+    "variables": {
+      "version": "0.1.0",
+      "aws_access_key": "{{ env `AWS_ACCESS_KEY_ID`}}",
+      "aws_secret_key": "{{ env `AWS_SECRET_ACCESS_KEY`}}",
+      "region": "{{ env `AWS_REGION`}}",
+      "environment": "{{ env `ENVIRONMENT`}}",
+      "aws_source_ami": "ami-08edbb0e85d6a0a07", 
+      "aws_vpc_id": "vpc-0d51b54c7551d1d3b",  
+      "aws_subnet_id": "subnet-000e649979462393a", 
+      "aws_ssh_username": "ubuntu", 
+      "aws_instance_type": "t2.micro" 
+    },
+    "builders": [{
+      "name": "spark",
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "{{user `region`}}",
+      "source_ami": "{{user `aws_source_ami`}}",
+      "vpc_id": "{{user `aws_vpc_id`}}",
+      "subnet_id": "{{user `aws_subnet_id`}}",
+      "instance_type": "{{user `aws_instance_type`}}",
+      "ssh_username": "{{user `aws_ssh_username`}}",
+      "ami_name": "spark-{{timestamp}}",
+      "associate_public_ip_address": true,
+      "tags": {
+        "ami_purpose": "spark",
+        "ami_version" : "{{user `version`}}"
+      }
+    }],
+    "provisioners": [
+    {
+      "type":           "shell",
+      "inline_shebang": "/bin/bash -e",
+      "environment_vars": [
+        "DEBIAN_FRONTEND=noninteractive"
+      ],
+      "inline": [
+        "echo === Installing Ansible ===",
+        "echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections",
+        "sudo rm /var/cache/debconf/*.dat",
+        "sudo apt-get install -y -q",
+        "sleep 5",
+        "sudo apt-get update",
+        "sudo apt-get install -y python3-pip",
+        "sudo -H pip install ansible",
+        "echo === Ansible installed ==="
+      ]
+    },
+    {
+      "type": "ansible-local",
+      "playbook_file": "ansible/spark.yml",
+      "playbook_dir": "ansible",
+      "extra_arguments": [ "--extra-vars \"Environment={{user `environment`}}\"", "-vvvv" ]
+    }
+  ]
+}
+  
