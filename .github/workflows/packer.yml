@@ -1,6 +1,6 @@
 # Run packer build on a template file
 
-name: Run packer build on a template file
+name: Packer build AMI
 
 # Controls when the workflow will run
 on:
